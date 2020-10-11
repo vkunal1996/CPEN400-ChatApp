@@ -1,0 +1,177 @@
+body{
+    width:100%;
+    margin:0%;
+    height: auto;
+}
+#app-view{
+    display: flex;
+    flex-flow: column;
+    align-content:center;
+}
+#app-menu{
+    background-color: #5d54a4;
+    display:inline-flex;
+    list-style: none;
+    justify-content: space-evenly; 
+    padding:0%;
+    margin: 0%;
+}
+.menu-item{
+    width:100%;
+    height: 100%;
+}
+.menu-item:first-child,.menu-item:last-child{
+    text-align: center;
+}
+.menu-item:first-child:hover, .menu-item:last-child:hover{
+    background-color: #c3aed6;
+    cursor:pointer;
+}
+.menu-item>a{
+    text-decoration: none;
+    color: white;
+    font-style: italic;
+    
+}
+.menu-item>a:hover{
+    color:skyblue;
+    filter:invert(38%) sepia(13%);
+}
+.menu-item>a>img{
+    filter: invert(100%);
+    width:50px;
+    height:50px;
+}
+#page-view{
+    display: flex;
+    flex-flow: column;
+}
+.content{
+    display:block;
+    height: 490px;
+    margin:0%;
+    padding: 0%;
+}
+.content>ul{
+    margin-top: 0%;
+    padding-left: 0%;
+    list-style: none;
+}
+.content ul>li>a{
+    color:black;
+    text-decoration: none;
+    font-style: oblique;
+}
+.content ul>li{
+    border-bottom: 2px solid darkgray;
+    padding: 0.5%;
+}
+.content ul>li:hover{
+    cursor: pointer;
+    background-color: #2a3d66;
+}
+.room-list{
+    padding: 0%;
+    margin: 0%;
+    height: 520px;
+    background-color: white;
+    align-self: flex-start;
+}
+.room-list li{
+    background-color: #ecf4f3;
+}
+.room-list li a img{
+    margin-right: 10px;
+    width: 25px;
+    height: 25px;
+}
+.page-control{
+    align-self: flex-end;
+    background-color: #5d54a4;
+    display: flex;
+    flex-flow: row;
+    justify-content: space-evenly;
+    padding:1%;
+}
+h4{
+    margin:0px;
+    padding:0.5%;
+}
+.message-list{
+    margin:0px;
+    display: flex;
+    flex-flow: column;
+    border-top: 2px solid darkgray;
+    background-color: gainsboro;
+    height: 475px;
+}
+.message{
+    display: flex;
+    flex-flow: column;
+    border: 2px solid grey;
+    border-radius:10px;
+    margin:10px;
+    padding:1%;
+    width:80%;
+    background-color: antiquewhite;
+}
+.my-message{
+    align-self: flex-end;
+    background-color:#5d54a4;
+    color: white;
+}
+.message-user{
+    font-style:italic;
+    font-weight: bold;
+    font-size: x-small;
+}
+.message-text{
+    font-size:xx-small;
+}
+.profile-form{
+    display: flex;
+    flex-flow: column;
+    padding: 2%;
+    height: 485px;
+}
+.form-field{
+
+    display: flex;
+    flex-flow: row;
+    margin-bottom: 2.9%;
+    border-bottom: 2px solid gainsboro;
+    padding-bottom: 1%;
+}
+.form-field img{
+    width:25px;
+    height: 25px;
+}
+
+label{
+    width:20%;
+}
+.form-field input{
+    width:250px;
+}
+.form-field textarea{
+    width:260px;
+    height:200px;
+}
+.page-control textarea{
+    width:90%;
+}
+@media screen and (min-width:1024px){
+    #app-view{
+        width:80%;
+    }
+}
+@media screen and (min-width:768px )and (max-width:1024px){
+    #app-view{
+        width:90%;
+    }
+}
+@media screen and (max-width:768px){
+    #app-view{
+        width:100%;
+    }
+} 
