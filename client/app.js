@@ -1,50 +1,70 @@
 function main() {
     /**Creating an object */
     var lobby = new Lobby();
-
+    var socket = new WebSocket("ws://" + window.location.hostname + ":8000");
+    // var socket=new WebSocket("ws://localhost:8000","p1");
+    console.log("Connection Succeded");
+    socket.addEventListener("message", (msg) => {
+        var message = JSON.parse(msg.data);
+        var getTheRoom = lobby.getRoom(message['roomId']);
+        if (getTheRoom !== undefined || getTheRoom !== null) {
+            getTheRoom.addMessage(message['username'], message['text']);
+        }
+    });
     var lobbyView = new LobbyView(lobby);
-    var chatView = new ChatView();
+    var chatView = new ChatView(socket);
     var profileView = new ProfileView();
 
 
-    this.renderRoute = function(url) {
-        var path = ""
-        if (url.target !== undefined) {
-            path = url.target.window.location.hash;
-            if (path === "#/" || path === "") {
-                /**Clearing DOM */
-                var elem = document.getElementById("page-view");
-                emptyDOM(elem);
-                elem.appendChild(lobbyView.elem);
-            } else if (path.split("/")[1] === "chat") {
-                /**Clearing DOM */
-                var elem = document.getElementById("page-view");
-                this.currentRoom = lobby.getRoom(path.split("/")[2]);
-                if (this.currentRoom != null && typeof this.currentRoom === "object" && this.currentRoom !== undefined) {
-                    chatView.setRoom(this.currentRoom);
-
-                }
-                emptyDOM(elem);
-                elem.appendChild(chatView.elem);
-
-
-
-
-            } else if (path.split("/")[1] === "profile") {
-                /**Clearing DOM */
-                var elem = document.getElementById("page-view");
-                emptyDOM(elem);
-                elem.appendChild(profileView.elem);
+    this.renderRoute = function() {
+        var path = window.location.hash;
+        if (path.split("/")[1] === '' || path === '') {
+            var elem = document.getElementById("page-view");
+            emptyDOM(elem);
+            elem.appendChild(lobbyView.elem);
+        } else if (path.split("/")[1] === "chat") {
+            var elem = document.getElementById("page-view");
+            this.currentRoom = lobby.getRoom(path.split("/")[2]);
+            if (this.currentRoom != null && typeof this.currentRoom === "object" && this.currentRoom !== undefined) {
+                chatView.setRoom(this.currentRoom);
             }
-
+            emptyDOM(elem);
+            elem.appendChild(chatView.elem);
+        } else if (path.split("/")[1] === "profile") {
+            var elem = document.getElementById("page-view");
+            emptyDOM(elem);
+            elem.appendChild(profileView.elem);
         }
-
-
+    }
+    this.refreshLobby = () => {
+        var getRoomsFromServer = Service.getAllRooms();
+        getRoomsFromServer.then((rooms) => {
+            for (var room = 0; room < rooms.length; room += 1) {
+                var flag = 0;
+                for (r in lobby.rooms) {
+                    if (lobby.rooms[r]['id'] === rooms[room]['id']) {
+                        lobby.rooms[r]['name'] = rooms[room]['name'];
+                        lobby.rooms[r]['image'] = rooms[room]['image'];
+                        flag = 1;
+                        break;
+                    }
+                }
+                if (flag === 0) {
+                    lobby.addRoom(rooms[room]['id'], rooms[room]['name'], rooms[room]['image'],rooms[room]['messages']);
+                }
+            }
+        }).catch(err => err);
 
     }
-    window.addEventListener("popstate", this.renderRoute, false);
 
-    this.renderRoute(String(window.location.hash));
+    window.addEventListener("popstate", this.renderRoute, false);
+    this.renderRoute();
+
+    this.refreshLobby();
+    setInterval(this.refreshLobby, 6000);
+
+
+
     cpen400a.export(arguments.callee, {
         renderRoute,
         lobbyView,
@@ -52,7 +72,9 @@ function main() {
         chatView,
         lobby,
         Lobby,
-        Room
+        Room,
+        refreshLobby,
+        socket
     });
 }
 
@@ -127,8 +149,23 @@ LobbyView.prototype.addNewRoom = function() {
     for (var prp in this.lobby.rooms) {
         count += 1;
     }
-    this.lobby.addRoom(count + 1, this.inputElem.value, undefined, undefined);
-    this.inputElem.value = "";
+
+    /**Client side adding the room */
+    /**this.lobby.addRoom(count + 1, this.inputElem.value, undefined, undefined);*/
+
+    /**Adding from the Server Side */
+    var self = this;
+    var getPromise = Service.addRoom({
+        "name": self.inputElem.value,
+        "image": "assets/everyone-icon.png"
+    });
+
+    getPromise.then(function(details) {
+        self.lobby.addRoom(details['id'], details['name'], undefined, undefined);
+        self.inputElem.value = "";
+    }).catch(err => err);
+
+
 
 }
 
@@ -139,7 +176,6 @@ LobbyView.prototype.redrawList = function() {
     var li;
     var img;
     var a;
-
     for (var i in this.lobby.rooms) {
         li = document.createElement("li");
         img = document.createElement("img");
@@ -158,7 +194,7 @@ LobbyView.prototype.redrawList = function() {
 };
 
 class ChatView {
-    constructor() {
+    constructor(socket) {
         this.elem = createDOM("\
   <div class='content'>\
   <h4 class='room-name'>Everyone in CPEN400A</h4> \
@@ -217,6 +253,7 @@ class ChatView {
   <button type='Submit'>Send</button>\
 </div>\
   ");
+        this.socket = socket;
         this.titleElem = this.elem.querySelector("h4");
         this.chatElem = this.elem.querySelector("div.message-list");
         this.inputElem = this.elem.querySelector("textarea");
@@ -241,6 +278,11 @@ class ChatView {
 ChatView.prototype.sendMessage = function() {
     this.text = this.inputElem.value;
     this.room.addMessage(profile.username, this.text);
+    this.socket.send(JSON.stringify({
+        "roomId": this.room['id'],
+        "username": profile.username,
+        "text": this.text
+    }));
     this.inputElem.value = "";
 }
 ChatView.prototype.setRoom = function(room) {
@@ -359,10 +401,11 @@ Room.prototype.addMessage = function(username, text) {
 class Lobby {
     constructor() {
         this.rooms = {
-            1: new Room(1, "Everyone in CPEN400A", "assets/everyone-icon.png", []),
-            2: new Room(2, "Foodies only", "assets/bibimbap.jpg", []),
-            3: new Room(3, "Gamers unite", "assets/minecraft.jpg", []),
-            4: new Room(4, "Canucks Fan", "assets/canucks.png", [])
+            /** Updating the lobby constructor to set it to empty object */
+            // 1: new Room(1, "Everyone in CPEN400A", "assets/everyone-icon.png", []),
+            // 2: new Room(2, "Foodies only", "assets/bibimbap.jpg", []),
+            // 3: new Room(3, "Gamers unite", "assets/minecraft.jpg", []),
+            // 4: new Room(4, "Canucks Fan", "assets/canucks.png", [])
 
         };
     }
@@ -386,5 +429,57 @@ Lobby.prototype.addRoom = function(id, name, image, messages) {
 var profile = {
     username: "Alice"
 };
+
+var Service = {
+    origin: window.location.origin,
+    getAllRooms: function() {
+        return new Promise((resolve, reject) => {
+            var request = new XMLHttpRequest();
+            // request.responseType = 'json';
+            request.open("GET", Service.origin + "/chat");
+            request.onload = function() {
+                if (request.status === 200) {
+                    resolve(JSON.parse(request.responseText));
+                }
+                else{
+                    reject(new Error(request.responseText));
+                }
+                // if (request.status === 500) {
+                //     var err = new Error("Server Error 500: " + request.responseURL.split("/")[4]);
+                //     reject(err);
+                // }
+            }
+            request.onerror = function(e) {
+                var err = new Error(request.responseText);
+                reject(err);
+            }
+            request.send();
+
+        });
+    },
+    addRoom: function(data) {
+        return new Promise((resolve, reject) => {
+            var request = new XMLHttpRequest();
+            request.open("POST", Service.origin + "/chat");
+            // request.responseType = 'json';
+            request.setRequestHeader("Content-Type", "application/json");
+            request.onload = function() {
+                if (request.status === 200) {
+                    resolve(JSON.parse(request.responseText));
+                }
+                else{
+                    reject (new Error(request.responseText));
+                }
+            }
+            request.onerror = function(e) {
+                var err = new Error(request.responseText);
+                reject(err);
+            }
+            request.send(JSON.stringify(data));
+        });
+
+    }
+}
+
 
 window.addEventListener("load", main, false);
