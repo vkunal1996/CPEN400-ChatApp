@@ -74,6 +74,8 @@ body{
     padding: 0%;
     margin: 0%;
     height: 520px;
+    max-height: 520px;
+    overflow-y: scroll;
     background-color: white;
     align-self: flex-start;
 }
@@ -104,6 +106,8 @@ h4{
     border-top: 2px solid darkgray;
     background-color: gainsboro;
     height: 475px;
+    max-height: 475px;
+    overflow-y: scroll;
 }
 .message{
     display: flex;
