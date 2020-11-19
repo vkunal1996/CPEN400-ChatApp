@@ -39,10 +39,11 @@ function main() {
     this.refreshLobby = () => {
         var getRoomsFromServer = Service.getAllRooms();
         getRoomsFromServer.then((rooms) => {
+
             for (var room = 0; room < rooms.length; room += 1) {
                 var flag = 0;
                 for (r in lobby.rooms) {
-                    if (lobby.rooms[r]['id'] === rooms[room]['id']) {
+                    if (lobby.rooms[r]['id'] === rooms[room]['_id']) {
                         lobby.rooms[r]['name'] = rooms[room]['name'];
                         lobby.rooms[r]['image'] = rooms[room]['image'];
                         flag = 1;
@@ -50,7 +51,7 @@ function main() {
                     }
                 }
                 if (flag === 0) {
-                    lobby.addRoom(rooms[room]['id'], rooms[room]['name'], rooms[room]['image'],rooms[room]['messages']);
+                    lobby.addRoom(rooms[room]['_id'], rooms[room]['name'], rooms[room]['image'],rooms[room]['messages']);
                 }
             }
         }).catch(err => err);
@@ -161,7 +162,7 @@ LobbyView.prototype.addNewRoom = function() {
     });
 
     getPromise.then(function(details) {
-        self.lobby.addRoom(details['id'], details['name'], undefined, undefined);
+        self.lobby.addRoom(details['_id'], details['name'], undefined, undefined);
         self.inputElem.value = "";
     }).catch(err => err);
 
@@ -256,6 +257,8 @@ class ChatView {
         this.socket = socket;
         this.titleElem = this.elem.querySelector("h4");
         this.chatElem = this.elem.querySelector("div.message-list");
+        this.chatElem.style.minHeight="50%";
+        this.chatElem.style.maxHeight="100%";
         this.inputElem = this.elem.querySelector("textarea");
         this.buttonElem = this.elem.querySelector("button");
         this.room = null;
@@ -272,6 +275,14 @@ class ChatView {
             }
 
         }, false);
+        this.chatElem.addEventListener("wheel",(e)=>{
+            this.event=e;
+           
+           if(this.room.canLoadConversation===true && this.chatElem.scrollTop===0 && this.event.deltaY<0){
+               console.log("Inside Wheel Event");
+                var x=this.room.getLastConversation.next();
+           }
+        },false);
     };
 }
 
@@ -290,9 +301,9 @@ ChatView.prototype.setRoom = function(room) {
     emptyDOM(this.titleElem);
     var title = document.createTextNode(this.room.name);
     this.titleElem.appendChild(title);
-
     /**Clearing DOM */
     emptyDOM(this.chatElem);
+
 
     if (this.room.messages.length != 0) {
         for (var i = 0; i < this.room.messages.length; i++) {
@@ -343,7 +354,35 @@ ChatView.prototype.setRoom = function(room) {
         }
         this.chatElem.appendChild(div);
     }
+    this.room.onFetchConversation=(conversation)=>{
+        var ha=this.chatElem.scrollHeight;
+        console.log("value of ha is "+ha);
+        for(var i=conversation.messages.length-1;i>=0;i-=1){
+            var message=conversation.messages[i];
+            var div = document.createElement("div");
+            var span_user = document.createElement("span");
+            var span_message = document.createElement("span");
+            var messageText = document.createTextNode(message.text);
+            var messageUser = document.createTextNode(message.username);
 
+            span_user.append(messageUser);
+            span_user.setAttribute("class", "message-user");
+            span_message.append(messageText);
+            span_message.setAttribute("class", 'message-text');
+            div.appendChild(span_user);
+            div.appendChild(span_message);
+
+            if (message.username === profile.username) {
+                div.setAttribute("class", "message my-message");
+            } else {
+                    div.setAttribute("class", "message");
+                }
+            this.chatElem.prepend(div);
+        }
+        var hb=this.chatElem.scrollHeight;
+        console.log("Value of hb is "+hb);
+        this.chatElem.scrollTop=hb-ha;
+    }
 }
 class ProfileView {
     constructor() {
@@ -380,6 +419,9 @@ class Room {
         this.image = image;
         this.name = name;
         this.messages = messages;
+        this.getLastConversation=makeConversationLoader(this);
+        this.canLoadConversation=true;
+        this.lastConversationTimeStamp=Date.now();
     }
 }
 
@@ -397,7 +439,19 @@ Room.prototype.addMessage = function(username, text) {
     }
 
 }
-
+Room.prototype.addConversation = function(conversation){
+    for(var i=conversation.messages.length-1;i>=0;i-=1){
+        this.messages.unshift(conversation.messages[i]);
+    }
+    if(this.onFetchConversation!==undefined){
+        this.onFetchConversation(conversation);
+    }
+    // this.onFetchConversation=function(conversation){
+    //     console.log("Onfetch");
+    // };
+    // this.onFetchConversation(this.messages);
+    // var onFetchConversation=function(conversation);
+}
 class Lobby {
     constructor() {
         this.rooms = {
@@ -478,8 +532,74 @@ var Service = {
             request.send(JSON.stringify(data));
         });
 
+    },
+    getLastConversation:function(roomId,before){
+        return new Promise((resolve,reject)=>{
+            var request=new XMLHttpRequest();
+            request.open("GET",Service.origin+"/chat/"+roomId+"/messages?before="+before);
+            request.onload = function() {
+                console.log("In getLasconversation [app.js]");
+                console.log(request.status);
+                if (request.status === 200) {
+                    resolve(JSON.parse(request.responseText));
+                }
+                else if (request.status===400){
+                    /**Remove Rejected */
+                    /**Instead resolving solve the problem of unhandled rejection */
+                    resolve (null);
+                }
+            }
+            request.onerror = function(e) {
+                var err = new Error(request.responseText);
+                reject(err);
+            }
+            request.send(roomId,before);
+        });
     }
+    
 }
 
+/**Adding Generator Function */
+function *makeConversationLoader(room){
+    console.log("Inside Generator function");
+    console.log(room);
+
+    var timestamp=room.lastConversationTimeStamp;
+    // timestamp=timestamp===undefined?Date.now():timestamp;
+    // room.canLoadConversation=room.canLoadConversation===undefined?true:room.canLoadConversation;
+    // room.addConversation=room.addConversation===undefined?Room.addConversation:room.addConversation;
+    console.log(timestamp);
+    console.log("Starting Loop");
+    while(timestamp>0 && room.canLoadConversation===true){
+        console.log("Inside Loop");
+        room.canLoadConversation=false;
+
+        console.log("Calling Service.getLastConversation() inside Loop");
+        convo=Service.getLastConversation(room.id,timestamp);
+        convo.then((result)=>{
+            if(result!==null){
+                console.log("Conversation Recieved");
+                console.log(result);
+                room.addConversation(result);
+                room.canLoadConversation=true;
+                timestamp=result.timestamp;
+            }
+            if(result===null){
+                console.log("Conversation is null");
+                room.canLoadConversation=false;
+            }
+        },(err)=>{console.log("No more messages");})
+        yield new Promise((resolve,reject)=>{
+            if(convo!==null){
+                resolve(convo);
+            }
+            else{
+                resolve(null);
+            }
+        });
+        
+    }
+    
+}
 
 window.addEventListener("load", main, false);
