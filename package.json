@@ -7,4 +7,21 @@
     "mongodb": "^3.6.3",
     "nodemon": "^2.0.6"
   }
+  "name": "Cpen400 ChatApp",
+  "version": "1.0.0",
+  "description": "node app ",
+  "main": "app.js",
+  "scripts": {
+  "start": "node app.js"
+},
+  "repository": {
+  "type": "git",
+  "url": "https://github.com/ubc-cpen400a-2020/project-vkunal1996.git"
+},
+  "author": "Kunal Verma",
+  "license": "ISC",
+  "bugs": {
+  "url": ""
+},
+  "homepage": ""
 }
