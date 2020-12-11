@@ -9,8 +9,8 @@
 4. Server Side code is written suing nodejs and expressjs.
 5. To handle the database of the chat messages, Mongodb database is used. 
 
-## Demo of application
-![Imgur](https://i.imgur.com/yLbIFZB.gifv)
+## *Demo of application
+[Demo](https://i.imgur.com/yLbIFZB.gifv)
 
 * Login Screen
 ![Imgur](https://i.imgur.com/eSozi1F.png)
