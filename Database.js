@@ -149,5 +149,12 @@ Database.prototype.addConversation = function(conversation) {
         })
     )
 }
-
+Database.prototype.getUser=function(username){
+    return this.connected.then(db=>
+        new Promise ((resolve,reject)=>{
+            var user=db.collection("users").findOne({username:username});
+            resolve(user);
+        })
+    ) 
+}
 module.exports = Database;

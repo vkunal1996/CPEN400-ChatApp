@@ -132,7 +132,7 @@ h4{
 .message-text{
     font-size:xx-small;
 }
-.profile-form{
+.profile-form, .login-form{
     display: flex;
     flex-flow: column;
     padding: 2%;
@@ -179,3 +179,21 @@ label{
         width:100%;
     }
 } 
+#loginHeading{
+    background-color: #5d54a4;
+    color: white;
+    text-decoration: none;
+    justify-self: center;
+    text-align: center;
+    width: 60%;
+    align-items: center;
+}
+.loginForm{
+    display: flex;
+    flex-flow: column;
+    align-content: center;
+}
+.headingLogin{
+    color:white;
+    font-size:60px;
+}
