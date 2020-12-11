@@ -18,6 +18,7 @@ function main() {
 
     this.renderRoute = function() {
         var path = window.location.hash;
+        console.log(path);
         if (path.split("/")[1] === '' || path === '') {
             var elem = document.getElementById("page-view");
             emptyDOM(elem);
@@ -34,6 +35,35 @@ function main() {
             var elem = document.getElementById("page-view");
             emptyDOM(elem);
             elem.appendChild(profileView.elem);
+        }else if(path.split("/")[1]==="logout"){
+            window.location.hash=window.location.hash.split("/")[0]+"/login";
+            var elm=document.getElementById("app-view");
+            emptyDOM(elm);
+            var x=createDOM("<ul id='app-menu'>\
+            <li class='headingLogin'>\
+              User Login\
+            </li>\
+            </ul>");
+
+            var y=createDOM("<div id='page-view'>\
+              <div class='login-form'>\
+                  <form method='POST' action='/login'>\
+                   <div class='form-field'>\
+                       <label>Username</label>\
+                       <input type='text' name='username' placeholder='Username'/>\
+                   </div>\
+                   <div class='form-field'>\
+                       <label>Password</label>\
+                       <input type='password' name='password' placeholder='Password'/>\
+                   </div>\
+                   <div class='page-control'>\
+                       <input type='submit' value='Login'/>\
+                   </div>\
+                   </form>\
+              </div>\
+              </div>");
+              elm.appendChild(x);
+              elm.appendChild(y);
         }
     }
     this.refreshLobby = () => {
@@ -279,7 +309,6 @@ class ChatView {
             this.event=e;
            
            if(this.room.canLoadConversation===true && this.chatElem.scrollTop===0 && this.event.deltaY<0){
-               console.log("Inside Wheel Event");
                 var x=this.room.getLastConversation.next();
            }
         },false);
@@ -287,7 +316,27 @@ class ChatView {
 }
 
 ChatView.prototype.sendMessage = function() {
-    this.text = this.inputElem.value;
+    // function sanitizeHtml(string){
+    //     var map={
+    //         '&':'&amp;',
+    //         '<':'&lt;',
+    //         '>':'&gt;',
+    //         '"':'&quot;',
+    //         "'":'&#39;',
+    //     }
+    //     var exp=/[&<>"'/]/ig;
+    //     return string.replace(exp,(match)=>(map[match]));
+    // }
+    // this.text = HtmlSanitizer.SanitizeHtml(this.inputElem.value);
+    
+    this.text=this.inputElem.value;
+    if(this.text.startsWith("<img")){
+        this.text="";
+    }else if(this.text.startsWith("<button")){
+        this.text=this.text.split(">")[1].split("<")[0];
+    }else if(this.text.startsWith("alert(") || this.text.startsWith("fetch(")){
+        this.text=message.text;
+    }
     this.room.addMessage(profile.username, this.text);
     this.socket.send(JSON.stringify({
         "roomId": this.room['id'],
@@ -356,7 +405,6 @@ ChatView.prototype.setRoom = function(room) {
     }
     this.room.onFetchConversation=(conversation)=>{
         var ha=this.chatElem.scrollHeight;
-        console.log("value of ha is "+ha);
         for(var i=conversation.messages.length-1;i>=0;i-=1){
             var message=conversation.messages[i];
             var div = document.createElement("div");
@@ -380,7 +428,6 @@ ChatView.prototype.setRoom = function(room) {
             this.chatElem.prepend(div);
         }
         var hb=this.chatElem.scrollHeight;
-        console.log("Value of hb is "+hb);
         this.chatElem.scrollTop=hb-ha;
     }
 }
@@ -493,7 +540,11 @@ var Service = {
             request.open("GET", Service.origin + "/chat");
             request.onload = function() {
                 if (request.status === 200) {
-                    resolve(JSON.parse(request.responseText));
+                    try{
+                        resolve(JSON.parse(request.responseText));
+                    }catch(err){
+                        reject(new Error(request.responseText));
+                    }
                 }
                 else{
                     reject(new Error(request.responseText));
@@ -538,8 +589,6 @@ var Service = {
             var request=new XMLHttpRequest();
             request.open("GET",Service.origin+"/chat/"+roomId+"/messages?before="+before);
             request.onload = function() {
-                console.log("In getLasconversation [app.js]");
-                console.log(request.status);
                 if (request.status === 200) {
                     resolve(JSON.parse(request.responseText));
                 }
@@ -555,31 +604,45 @@ var Service = {
             }
             request.send(roomId,before);
         });
+    },
+    getProfile:function(){
+        return new Promise((resolve,reject)=>{
+            var request=new XMLHttpRequest();
+            request.open("GET",Service.origin+"/profile");
+            request.onload=function(){
+                if(request.status===200){
+                    resolve(JSON.parse(request.responseText));
+                }
+                else if(request.status===400){
+                    resolve(null);
+                }
+            }
+            request.onerror = function(e) {
+                var err = new Error(request.responseText);
+                reject(err);
+            }
+            request.send();
+        });
     }
     
 }
-
+var user=Service.getProfile();
+user.then((result)=>{
+    profile.username=result.username;
+})
 /**Adding Generator Function */
 function *makeConversationLoader(room){
-    console.log("Inside Generator function");
-    console.log(room);
 
     var timestamp=room.lastConversationTimeStamp;
     // timestamp=timestamp===undefined?Date.now():timestamp;
     // room.canLoadConversation=room.canLoadConversation===undefined?true:room.canLoadConversation;
     // room.addConversation=room.addConversation===undefined?Room.addConversation:room.addConversation;
-    console.log(timestamp);
-    console.log("Starting Loop");
     while(timestamp>0 && room.canLoadConversation===true){
-        console.log("Inside Loop");
         room.canLoadConversation=false;
 
-        console.log("Calling Service.getLastConversation() inside Loop");
         convo=Service.getLastConversation(room.id,timestamp);
         convo.then((result)=>{
             if(result!==null){
-                console.log("Conversation Recieved");
-                console.log(result);
                 room.addConversation(result);
                 room.canLoadConversation=true;
                 timestamp=result.timestamp;
