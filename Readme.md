@@ -10,7 +10,7 @@
 5. To handle the database of the chat messages, Mongodb database is used. 
 
 ## *Demo of application
-[Demo](https://i.imgur.com/yLbIFZB.gifv)
+![Demo](https://i.imgur.com/yLbIFZB.gifv)
 
 * Login Screen
 ![Imgur](https://i.imgur.com/eSozi1F.png)
