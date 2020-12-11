@@ -14,13 +14,13 @@
 
 * Login Screen
 ![Imgur](https://i.imgur.com/eSozi1F.png)
-<br/>
+
 * User Registration
 ![Imgur](https://i.imgur.com/dYGvNi2.png)
-<br/>
+
 * ChatRooms
 ![Imgur](https://i.imgur.com/7baY9L0.png)
-<br/>
+
 * ChatRoom Messages
 ![Imgur](https://i.imgur.com/YDI0b9D.png)
 
