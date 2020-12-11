@@ -10,14 +10,14 @@
 5. To handle the database of the chat messages, Mongodb database is used. 
 
 * Login Screen
-[Imgur](https://i.imgur.com/eSozi1F.png)
+![Imgur](https://i.imgur.com/eSozi1F.png)
 
 * User Registration
-[Imgur](https://i.imgur.com/dYGvNi2.png)
+![Imgur](https://i.imgur.com/dYGvNi2.png)
 
 * ChatRooms
-[Imgur](https://i.imgur.com/7baY9L0.png)
+![Imgur](https://i.imgur.com/7baY9L0.png)
 
 * ChatRoom Messages
-[Imgur](https://i.imgur.com/YDI0b9D.png)
+![Imgur](https://i.imgur.com/YDI0b9D.png)
 
