@@ -19,7 +19,7 @@ function logRequest(req, res, next){
 }
 
 const host = 'localhost';
-const port = 3000;
+const port = process.env.PORT || 3000;
 const clientApp = path.join(__dirname, 'client');
 
 // express app
